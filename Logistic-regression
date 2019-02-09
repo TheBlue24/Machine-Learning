@@ -1,0 +1,57 @@
+library("caTools")
+library("MASS")
+data <-read.csv("diabetes.csv")
+#attach(data)
+# Normalization
+res <- data$Outcome
+data <- scale(data[1:nrow(data),1:ncol(data)-1])
+data <- as.matrix(data)
+data <- cbind(data,res)
+data <- as.data.frame(data)
+# correlation
+pairs(data)
+
+attach(data)
+#boxplot
+boxplot(Pregnancies,horizontal = T) #LESS THAN 2 ONLY
+data<-data[Pregnancies<2,]
+boxplot(Glucose,horizontal = T) #GREATER THAN -2 ONLY
+data <-data[Glucose>-2,]
+boxplot(BloodPressure,horizontal = T)# WITHIN -1 TO 1
+data <- data[BloodPressure>-1,]
+data <-data[BloodPressure<1,]
+boxplot(SkinThickness,horizontal = T) # LESS THAN 3
+data <- data[SkinThickness<3,]
+boxplot(Insulin,horizontal = T) # LESS THAN 2
+data <- data[Insulin<2,]
+boxplot(BMI,horizontal = T) # WITHIN -2 TO 2.2
+data <- data[BMI>-2,]
+data <- data[BMI<2.2,]
+boxplot(DiabetesPedigreeFunction,horizontal = T) # LESS THAN 2
+data <- data[DiabetesPedigreeFunction<2,]
+boxplot(Age,horizontal = T) #LESS THAN 2.9
+data <-data[Age<2.9,]
+# I think we want to remove outliers
+#model
+split<- sample.split(res,SplitRatio = 0.75)
+train <-subset(data,split==TRUE)
+test <-subset(data,split==FALSE)
+#model <- glm(res~.,train,family = binomial)
+
+#summary(model)
+#stepAIC(model)
+model1 <- glm(res~Pregnancies + Glucose + BloodPressure + Insulin + BMI + 
+                DiabetesPedigreeFunction,train,family=binomial)
+summary(model1)
+prob_predict <- predict(model1,test,type = "response")
+result <-ifelse(prob_predict>0.8,1,0)
+
+m<- table(result,test$res)
+m
+print((sum(diag(m))/sum(m))*100)
+
+prob=predict(model1,type=c("response"))
+
+library(pROC)
+g <- roc(res ~ prob,train)
+plot(g)    
