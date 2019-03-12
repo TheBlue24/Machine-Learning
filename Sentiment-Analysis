@@ -1,0 +1,74 @@
+
+# Load Requried Packages
+library(SnowballC)
+library(tm)
+library(twitteR)
+library(dplyr)
+library(syuzhet)
+library(tidytext)
+library(wordcloud)
+library(ggplot2)
+library(leaflet)
+library(gganimate)
+library(lubridate)
+library(maps)
+library(ggthemes)
+library(tidyr)
+library(viridis)#color palettes
+library(radarchart)#for wheels emotions
+consumer_key <- 'put ur id'
+consumer_secret <- 'put ur id'
+access_token <- 'put ur id'
+access_secret <- 'put ur id'
+#connection
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+tweets <- searchTwitter("#india", n=100,lang = "en")
+View(tweets)
+n.tweet <- length(tweets)
+#to dataframe
+tweets.df <- twListToDF(tweets) 
+View(tweets.df)
+#corpus
+mycorpus <-Corpus(VectorSource(tweets.df$text))
+#clean the data
+mycorpus <-tm_map(mycorpus,tolower)
+mycorpus <-tm_map(mycorpus,removeNumbers)
+mycorpus <-tm_map(mycorpus,removePunctuation)
+mycorpus <-tm_map(mycorpus,stripWhitespace)
+mycorpus <-tm_map(mycorpus,removeWords,stopwords())
+
+#Document term matrix
+doc_matrix <-DocumentTermMatrix(mycorpus,control = list(tolower=TRUE,
+                                                      stopwords=TRUE,
+                                                       removePunctuation=TRUE,
+                                                       stripWhitespace=TRUE))
+#View(doc_matrix[1:10,1:4])
+#wordcloud
+wordcloud(mycorpus,min.freq = 3,colors = brewer.pal(9,"Set2"),random.order = FALSE,rot.per = 0.90)
+#sentiment
+nrc_senti <- get_sentiments("nrc")
+data <- tibble(1:nrow(tweets.df),text=tweets.df$text)
+data <- data %>% unnest_tokens(word,text)
+#stop words removal
+View(stop_words)
+data <- data %>% anti_join(stop_words)
+#count each word
+data %>% count(word,sort = TRUE)
+
+#for 10 emotions in nrc
+emotions <-data %>% inner_join(nrc_senti) %>% group_by(sentiment) %>% count() %>% arrange(n) 
+emotions %>% ggplot(aes(x=sentiment,y=n,fill=n))+geom_col()+xlab("Sentiments")+ylab("Count")+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+chartJSRadar(emotions)#
+bing <- get_sentiments("bing")
+bing_analysis <-data %>% inner_join(bing) %>% group_by(sentiment) %>% count() %>% arrange(n)
+bing_analysis  %>% ggplot(aes(x=sentiment,y=n,fill=sentiment))+geom_col()+xlab("Sentiment")+ylab("Count")
+#typeof(data)
+#google map
+lat <- tweets.df$latitude
+long <- tweets.df$longitude
+#Location based
+location <- data.frame(x_lat=lat,y_long=long)
+#general map
+world_basemap <- ggplot() +
+  borders("world", colour = "gray85", fill = "gray80")+theme_map()
+world_basemap+geom_point(location,aes(x=x_lat,y=y_long),color ="purple",alpha=0.5)
