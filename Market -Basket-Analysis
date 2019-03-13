@@ -1,0 +1,11 @@
+library(arules)
+library(arulesViz)
+data <- read.transactions("transactions_by_dept.csv")
+summary(data)
+rules <- apriori(data,parameter = list(supp = 0.001, conf = 0.80))
+#Frequent item
+arules::itemFrequencyPlot(data,topN=20,col=brewer.pal(8,'Pastel2'),main='Relative Item Frequency Plot',type="relative",ylab="Item Frequency (Relative)")
+#graph method
+plot(rules[1:20],method = "graph",control = list(type = "items"))
+#Interactive Scatterplot
+arulesViz::plotly_arules(rules)
