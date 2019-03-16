@@ -1,0 +1,29 @@
+data <- read.csv("c-data.csv")
+str(data)
+summary(data)
+#data <- data[1:nrow(data),1:ncol(data)-1]
+wcss=c()
+data <- na.omit(data)
+data <- data[!is.na(data),]
+data <- data[1:nrow(data),2:ncol(data)]
+sol <- function(x){
+  d<-ifelse(is.na(x),median(x),x)
+  return (d)
+}
+data <- apply(data,2,sol)
+nq <-(ifelse(apply(data,1,is.na),1,0))
+data <- data[!nq,]
+summary(data)
+data <- na.omit(data)
+wcss=c()
+for(i in 1:10){
+  wcss[i]=sum(kmeans(data,i)$withinss)
+}
+print(wcss)
+plot(1:10,wcss)
+model_4 <- kmeans(data,4)
+model_5 <-kmeans(data,5)
+model_6 <- kmeans(data,6)
+summary(model_4)
+summary(model_5)
+summary(model_6)
