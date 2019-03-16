@@ -1,0 +1,9 @@
+data <- read.csv("bdata.csv",sep=";")
+str(data)
+summary(data)
+data <- data[1:nrow(data),1:ncol(data)-1]
+#just a sample data of 100
+data <- data[1:100,]
+model <- hclust(dist(data[1:100,1:ncol(data)-1]))
+clusterCut <- cutree(model, 2)
+table(clusterCut, data$y)
